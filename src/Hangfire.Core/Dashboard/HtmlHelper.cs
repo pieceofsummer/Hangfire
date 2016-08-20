@@ -106,7 +106,6 @@ namespace Hangfire.Dashboard
                 return Strings.Common_CannotFindTargetMethod;
             }
 
-#if NETFULL
             var displayNameAttribute = job.Method.GetCustomAttribute(typeof(DisplayNameAttribute)) as DisplayNameAttribute;
             if (displayNameAttribute != null && displayNameAttribute.DisplayName != null)
             {
@@ -119,7 +118,6 @@ namespace Hangfire.Dashboard
                     return displayNameAttribute.DisplayName;
                 }
             }
-#endif
 
             return job.ToString();
         }
