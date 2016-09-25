@@ -320,7 +320,7 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IServerFilter)state;
+                        var filter = (IAsyncServerFilter)state;
                         _log.DebugFormat("leave '{0}.OnPerformedAsync'", filter.GetType().Name);
 
                         goto case State.OnPerformedNext;

@@ -112,13 +112,12 @@ namespace Hangfire.Common
         #endregion
 
         /// <summary>
-        /// Converts an arbitra <paramref name="task"/> into <see cref="Task{Object}"/> upon completion.
-        /// Although task is defined as <see cref="Task"/>, it can be any <see cref="Task{TResult}"/> 
-        /// which type we know only at runtime.
+        /// Converts an arbitrary <paramref name="task"/> into <see cref="Task{Object}"/> upon completion.
+        /// Although task type is <see cref="Task"/>, it can actually be any <see cref="Task{TResult}"/> 
+        /// with result type only known at runtime.
         /// </summary>
         /// <param name="task">Task to convert</param>
-        /// <param name="resultType">Type argument for <see cref="Task{TResult}"/>, or null/void for <see cref="Task"/>.</param>
-        /// <returns></returns>
+        /// <param name="resultType">Type result for <see cref="Task{TResult}"/>, or <c>null</c>/<see cref="void"/> for <see cref="Task"/>.</param>
         public static Task<object> ContinueWithCast(this Task task, Type resultType)
         { 
             var tcs = new TaskCompletionSource<object>();
