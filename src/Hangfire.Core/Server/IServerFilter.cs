@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU Lesser General Public 
 // License along with Hangfire. If not, see <http://www.gnu.org/licenses/>.
 
+using Hangfire.Filters;
+
 namespace Hangfire.Server
 {
     /// <summary>
     /// Defines methods that are required for a server filter.
     /// </summary>
-    public interface IServerFilter
+    public interface IServerFilter : ISyncAsyncPair<IServerFilter, IAsyncServerFilter>
     {
         /// <summary>
         /// Called before the performance of the job.

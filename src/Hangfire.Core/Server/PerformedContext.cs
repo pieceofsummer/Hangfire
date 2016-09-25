@@ -20,7 +20,7 @@ namespace Hangfire.Server
 {
     /// <summary>
     /// Provides the context for the <see cref="IServerFilter.OnPerformed"/>
-    /// method of the <see cref="IServerFilter"/> interface.
+    /// and <see cref="IAsyncServerFilter.OnPerformedAsync"/> methods.
     /// </summary>
     public class PerformedContext : PerformContext
     {

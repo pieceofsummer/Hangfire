@@ -118,8 +118,10 @@ namespace Hangfire.Common
             if (instance != null &&
                 !(instance is IClientFilter 
                 || instance is IServerFilter 
+                || instance is IAsyncServerFilter
                 || instance is IClientExceptionFilter 
                 || instance is IServerExceptionFilter
+                || instance is IAsyncServerExceptionFilter
                 || instance is IApplyStateFilter
                 || instance is IElectStateFilter))
             {

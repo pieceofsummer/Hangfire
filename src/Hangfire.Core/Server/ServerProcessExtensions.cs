@@ -28,6 +28,11 @@ namespace Hangfire.Server
     {
         public static void Execute(this IServerProcess process, BackgroundProcessContext context)
         {
+            if (process is IBackgroundTask)
+            {
+                throw new ArgumentOutOfRangeException(nameof(process), "For background tasks, use ExecuteAsync() instead");
+            }
+
             if (!(process is IServerComponent || process is IBackgroundProcess))
             {
                 throw new ArgumentOutOfRangeException(nameof(process), "Long-running process must be of type IServerComponent or IBackgroundProcess.");
@@ -49,6 +54,11 @@ namespace Hangfire.Server
         {
             if (process == null) throw new ArgumentNullException(nameof(process));
 
+            if (process is IBackgroundTask)
+            {
+                return ((IBackgroundTask)process).ExecuteAsync(context);
+            }
+
             if (!(process is IServerComponent || process is IBackgroundProcess))
             {
                 throw new ArgumentOutOfRangeException(nameof(process), "Long-running process must be of type IServerComponent or IBackgroundProcess.");
@@ -65,9 +75,19 @@ namespace Hangfire.Server
 
             var nextProcess = process;
 
-            while (nextProcess is IBackgroundProcessWrapper)
+            if (nextProcess is IBackgroundTaskWrapper)
             {
-                nextProcess = ((IBackgroundProcessWrapper) nextProcess).InnerProcess;
+                while (nextProcess is IBackgroundTaskWrapper)
+                {
+                    nextProcess = ((IBackgroundTaskWrapper)nextProcess).InnerTask;
+                }
+            }
+            else
+            {
+                while (nextProcess is IBackgroundProcessWrapper)
+                {
+                    nextProcess = ((IBackgroundProcessWrapper)nextProcess).InnerProcess;
+                }
             }
 
             return nextProcess.GetType();

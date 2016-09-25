@@ -20,7 +20,7 @@ namespace Hangfire.Server
 {
     /// <summary>
     /// Provides the context for the <see cref="IServerExceptionFilter.OnServerException"/>
-    /// method of the <see cref="IServerExceptionFilter"/> interface.
+    /// and <see cref="IAsyncServerExceptionFilter.OnServerExceptionAsync"/> methods.
     /// </summary>
     public class ServerExceptionContext : PerformContext
     {
@@ -36,7 +36,7 @@ namespace Hangfire.Server
         /// Gets an exception that occurred during the performance of the job.
         /// </summary>
         public Exception Exception { get; }
-
+        
         /// <summary>
         /// Gets or sets a value that indicates that this <see cref="ServerExceptionContext"/>
         /// object handles an exception occurred during the performance of the job.

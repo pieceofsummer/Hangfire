@@ -14,25 +14,33 @@
 // You should have received a copy of the GNU Lesser General Public 
 // License along with Hangfire. If not, see <http://www.gnu.org/licenses/>.
 
-using Hangfire.Filters;
+using System;
+using Hangfire.Annotations;
+using System.Threading.Tasks;
+
+#pragma warning disable 618 // Obsolete member
 
 namespace Hangfire.Server
 {
     /// <summary>
-    /// Provides the context for the <see cref="IServerFilter.OnPerforming"/> and 
-    /// <see cref="IAsyncServerFilter.OnPerformingAsync"/> methods.
+    /// Provides methods for defining processes that will be executed in a
+    /// background task by <see cref="BackgroundProcessingServer"/>.
     /// </summary>
-    public class PerformingContext : PerformContext
+    /// 
+    /// <remarks>
+    /// Needs a wait.
+    /// Cancellation token
+    /// Connection disposal
+    /// </remarks>
+    /// 
+    /// <seealso cref="BackgroundProcessingServer"/>
+    public interface IBackgroundTask : IBackgroundProcess
     {
-        internal PerformingContext(PerformContext context)
-            : base(context)
-        {
-        }
-
         /// <summary>
-        /// Gets or sets a value that indicates that this <see cref="PerformingContext"/>
-        /// object was canceled.
+        /// 
         /// </summary>
-        public bool Canceled { get; set; }
+        /// <param name="context">Context for a background task.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="context"/> is null.</exception>
+        Task ExecuteAsync([NotNull] BackgroundProcessContext context);
     }
 }

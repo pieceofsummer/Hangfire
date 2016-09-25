@@ -6,6 +6,7 @@ using Hangfire.Server;
 using Hangfire.States;
 using Hangfire.Storage;
 using Moq;
+using System.Threading.Tasks;
 #if NETFULL
 using Moq.Sequences;
 #endif
@@ -81,22 +82,22 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_TakesConnectionAndReleasesIt()
+        public async Task Execute_TakesConnectionAndReleasesIt()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _context.Storage.Verify(x => x.GetConnection(), Times.Once);
             _connection.Verify(x => x.Dispose(), Times.Once);
         }
 
         [Fact]
-        public void Execute_FetchesAJobAndRemovesItFromQueue()
+        public async Task Execute_FetchesAJobAndRemovesItFromQueue()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _connection.Verify(
                 x => x.FetchNextJob(_queues, _context.CancellationTokenSource.Token),
@@ -106,7 +107,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_RequeuesAJob_WhenThereWasAnException()
+        public async Task Execute_RequeuesAJob_WhenThereWasAnException()
         {
             _stateChanger
                 .Setup(x => x.ChangeState(It.IsAny<StateChangeContext>()))
@@ -114,8 +115,8 @@ namespace Hangfire.Core.Tests.Server
 
             var worker = CreateWorker();
 
-            Assert.Throws<InvalidOperationException>(
-                () => worker.Execute(_context.Object));
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => worker.ExecuteAsync(_context.Object));
 
             _fetchedJob.Verify(x => x.RemoveFromQueue(), Times.Never);
             _fetchedJob.Verify(x => x.Requeue());
@@ -123,7 +124,7 @@ namespace Hangfire.Core.Tests.Server
 
 #if NETFULL
         [Fact, Sequence]
-        public void Execute_ExecutesDefaultWorkflow_WhenJobIsCorrect()
+        public async Task Execute_ExecutesDefaultWorkflow_WhenJobIsCorrect()
         {
             // Arrange
             _stateChanger
@@ -142,29 +143,29 @@ namespace Hangfire.Core.Tests.Server
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert - see the `SequenceAttribute` class.
         }
 #endif
 
         [Fact]
-        public void Execute_SetsCurrentServer_ToProcessingState()
+        public async Task Execute_SetsCurrentServer_ToProcessingState()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>
                 ctx.NewState is ProcessingState && (((ProcessingState) ctx.NewState).ServerId == _context.ServerId))));
         }
 
         [Fact]
-        public void Execute_ProcessesOnlyJobs_InEnqueuedAndProcessingState()
+        public async Task Execute_ProcessesOnlyJobs_InEnqueuedAndProcessingState()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>
                 ctx.NewState is ProcessingState &&
@@ -173,7 +174,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_DoesNotRun_PerformanceProcess_IfTransitionToProcessingStateFailed()
+        public async Task Execute_DoesNotRun_PerformanceProcess_IfTransitionToProcessingStateFailed()
         {
             // Arrange
             _stateChanger
@@ -183,37 +184,37 @@ namespace Hangfire.Core.Tests.Server
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert
-            _performer.Verify(x => x.Perform(It.IsAny<PerformContext>()), Times.Never);
+            _performer.Verify(x => x.PerformAsync(It.IsAny<PerformContext>()), Times.Never);
         }
 
         [Fact]
-        public void Execute_Runs_PerformanceProcess()
+        public async Task Execute_Runs_PerformanceProcess()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
-            _performer.Verify(x => x.Perform(It.IsNotNull<PerformContext>()));
+            _performer.Verify(x => x.PerformAsync(It.IsNotNull<PerformContext>()));
         }
 
         [Fact]
-        public void Execute_DoesNotMoveAJob_ToTheFailedState_ButRequeuesIt_WhenProcessThrowsOperationCanceled_DuringShutdownOnly()
+        public async Task Execute_DoesNotMoveAJob_ToTheFailedState_ButRequeuesIt_WhenProcessThrowsOperationCanceled_DuringShutdownOnly()
         {
             // Arrange
             var cts = new CancellationTokenSource();
             _context.CancellationTokenSource = cts;
 
-            _performer.Setup(x => x.Perform(It.IsAny<PerformContext>()))
+            _performer.Setup(x => x.PerformAsync(It.IsAny<PerformContext>()))
                 .Callback(() => cts.Cancel())
                 .Throws<OperationCanceledException>();
 
             var worker = CreateWorker();
 
             // Act
-            Assert.Throws<OperationCanceledException>(() => worker.Execute(_context.Object));
+            await Assert.ThrowsAsync<OperationCanceledException>(() => worker.ExecuteAsync(_context.Object));
 
             // Assert
             _stateChanger.Verify(
@@ -223,16 +224,16 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_MovesAJob_ToTheFailedState_AndNotRequeuesIt_WhenProcessThrowsOperationCanceled_WhenShutdownWasNotRequested()
+        public async Task Execute_MovesAJob_ToTheFailedState_AndNotRequeuesIt_WhenProcessThrowsOperationCanceled_WhenShutdownWasNotRequested()
         {
             // Arrange
-            _performer.Setup(x => x.Perform(It.IsAny<PerformContext>()))
+            _performer.Setup(x => x.PerformAsync(It.IsAny<PerformContext>()))
                 .Throws<OperationCanceledException>();
 
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert
             _stateChanger.Verify(
@@ -242,16 +243,16 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_DoesNotMoveAJobToFailedState_AndRemovesJobFromQueue_WhenProcessThrowsJobAbortedException()
+        public async Task Execute_DoesNotMoveAJobToFailedState_AndRemovesJobFromQueue_WhenProcessThrowsJobAbortedException()
         {
             // Arrange
-            _performer.Setup(x => x.Perform(It.IsAny<PerformContext>()))
+            _performer.Setup(x => x.PerformAsync(It.IsAny<PerformContext>()))
                 .Throws<JobAbortedException>();
 
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _stateChanger.Verify(
                 x => x.ChangeState(It.Is<StateChangeContext>(ctx => ctx.NewState is FailedState)),
@@ -261,11 +262,11 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_MovesJob_ToSuccessfulState_OnlyIfItIsInProcessingState()
+        public async Task Execute_MovesJob_ToSuccessfulState_OnlyIfItIsInProcessingState()
         {
             var worker = CreateWorker();
 
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>
                 ctx.NewState is SucceededState &&
@@ -273,18 +274,18 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_MovesJob_ToFailedState_IfThereWasInternalException()
+        public async Task Execute_MovesJob_ToFailedState_IfThereWasInternalException()
         {
             // Arrange
             var exception = new InvalidOperationException();
             _performer
-                .Setup(x => x.Perform(It.IsAny<PerformContext>()))
+                .Setup(x => x.PerformAsync(It.IsAny<PerformContext>()))
                 .Throws(exception);
 
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>
@@ -294,18 +295,18 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_MovesJob_ToFailedState_IfThereWasUserException()
+        public async Task Execute_MovesJob_ToFailedState_IfThereWasUserException()
         {
             // Arrange
             var exception = new InvalidOperationException();
             _performer
-                .Setup(x => x.Perform(It.IsAny<PerformContext>()))
+                .Setup(x => x.PerformAsync(It.IsAny<PerformContext>()))
                 .Throws(new JobPerformanceException("hello", exception));
 
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>
@@ -314,7 +315,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Execute_MovesJob_ToFailedState_IfThereWasJobLoadException()
+        public async Task Execute_MovesJob_ToFailedState_IfThereWasJobLoadException()
         {
             // Arrange
             _connection.Setup(x => x.GetJobData(JobId))
@@ -323,7 +324,7 @@ namespace Hangfire.Core.Tests.Server
             var worker = CreateWorker();
 
             // Act
-            worker.Execute(_context.Object);
+            await worker.ExecuteAsync(_context.Object);
 
             // Assert
             _stateChanger.Verify(x => x.ChangeState(It.Is<StateChangeContext>(ctx =>

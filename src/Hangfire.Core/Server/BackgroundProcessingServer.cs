@@ -193,7 +193,14 @@ namespace Hangfire.Server
         private static IServerProcess WrapProcess(IServerProcess process)
 #pragma warning restore 618
         {
-            return new InfiniteLoopProcess(new AutomaticRetryProcess(process));
+            if (process is IBackgroundTask)
+            {
+                return new InfiniteLoopTask(new AutomaticRetryTask((IBackgroundTask)process));
+            }
+            else
+            {
+                return new InfiniteLoopProcess(new AutomaticRetryProcess(process));
+            }
         }
 
         private static ServerContext GetServerContext(IReadOnlyDictionary<string, object> properties)

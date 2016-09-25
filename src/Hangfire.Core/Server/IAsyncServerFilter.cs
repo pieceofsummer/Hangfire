@@ -15,24 +15,25 @@
 // License along with Hangfire. If not, see <http://www.gnu.org/licenses/>.
 
 using Hangfire.Filters;
+using System.Threading.Tasks;
 
 namespace Hangfire.Server
 {
     /// <summary>
-    /// Provides the context for the <see cref="IServerFilter.OnPerforming"/> and 
-    /// <see cref="IAsyncServerFilter.OnPerformingAsync"/> methods.
+    /// Defines methods that are required for an asynchronous server filter.
     /// </summary>
-    public class PerformingContext : PerformContext
+    public interface IAsyncServerFilter : ISyncAsyncPair<IServerFilter, IAsyncServerFilter>
     {
-        internal PerformingContext(PerformContext context)
-            : base(context)
-        {
-        }
+        /// <summary>
+        /// Called before the performance of the job.
+        /// </summary>
+        /// <param name="filterContext">The filter context.</param>
+        Task OnPerformingAsync(PerformingContext filterContext);
 
         /// <summary>
-        /// Gets or sets a value that indicates that this <see cref="PerformingContext"/>
-        /// object was canceled.
+        /// Called after the performance of the job.
         /// </summary>
-        public bool Canceled { get; set; }
+        /// <param name="filterContext">The filter context.</param>
+        Task OnPerformedAsync(PerformedContext filterContext);
     }
 }

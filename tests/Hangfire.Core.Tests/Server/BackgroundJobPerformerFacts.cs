@@ -5,6 +5,7 @@ using System.Threading;
 using Hangfire.Common;
 using Hangfire.Server;
 using Moq;
+using System.Threading.Tasks;
 #if NETFULL
 using Moq.Sequences;
 #endif
@@ -51,39 +52,39 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_ThrowsAnException_WhenContextIsNull()
+        public async Task Run_ThrowsAnException_WhenContextIsNull()
         {
             var performer = CreatePerformer();
 
-            var exception = Assert.Throws<ArgumentNullException>(
-                () => performer.Perform(null));
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                () => performer.PerformAsync(null));
 
             Assert.Equal("context", exception.ParamName);
         }
 
         [Fact]
-        public void Run_CallsTheRunMethod_OfInnerProcess()
+        public async Task Run_CallsTheRunMethod_OfInnerProcess()
         {
             var performer = CreatePerformer();
 
-            performer.Perform(_context.Object);
+            await performer.PerformAsync(_context.Object);
 
-            _innerPerformer.Verify(x => x.Perform(_context.Object), Times.Once);
+            _innerPerformer.Verify(x => x.PerformAsync(_context.Object), Times.Once);
         }
 
         [Fact]
-        public void Run_StoresJobReturnValueInPerformedContext()
+        public async Task Run_StoresJobReturnValueInPerformedContext()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
             var performer = CreatePerformer();
 
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
-                .Returns("Returned value");
+                .Setup(x => x.PerformAsync(_context.Object))
+                .Returns(Task.FromResult<object>("Returned value"));
 
             // Act
-            performer.Perform(_context.Object);
+            await performer.PerformAsync(_context.Object);
 
             // Assert
             filter.Verify(
@@ -91,7 +92,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_ReturnsValueReturnedByJob()
+        public async Task Run_ReturnsValueReturnedByJob()
         {
             // Arrange
             // ReSharper disable once UnusedVariable
@@ -99,46 +100,65 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
-                .Returns("Returned value");
+                .Setup(x => x.PerformAsync(_context.Object))
+                .Returns(Task.FromResult<object>("Returned value"));
 
             // Act
-            var result = performer.Perform(_context.Object);
+            var result = await performer.PerformAsync(_context.Object);
 
             // Assert
             Assert.Equal("Returned value", result);
         }
 
         [Fact]
-        public void Run_DoesNotCatchExceptions()
+        public Task Run_DoesNotCatchExceptions()
         {
             // Arrange
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<InvalidOperationException>();
 
             var performer = CreatePerformer();
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => performer.Perform(_context.Object));
+            return Assert.ThrowsAsync<InvalidOperationException>(() => performer.PerformAsync(_context.Object));
         }
 
         [Fact]
-        public void Run_CallsExceptionFilter_OnException()
+        public async Task Run_CallsExceptionFilter_OnException()
         {
             // Arrange
             var filter = CreateFilter<IServerExceptionFilter>();
 
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<InvalidOperationException>();
             
             var performer = CreatePerformer();
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => performer.PerformAsync(_context.Object));
 
             filter.Verify(x => x.OnServerException(It.Is<ServerExceptionContext>(context =>
+                context.Exception is InvalidOperationException)));
+        }
+
+        [Fact]
+        public async Task Run_CallsAsyncExceptionFilter_OnException()
+        {
+            // Arrange
+            var filter = CreateFilter<IAsyncServerExceptionFilter>();
+
+            _innerPerformer
+                .Setup(x => x.PerformAsync(_context.Object))
+                .Throws<InvalidOperationException>();
+
+            var performer = CreatePerformer();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => performer.PerformAsync(_context.Object));
+
+            filter.Verify(x => x.OnServerExceptionAsync(It.Is<ServerExceptionContext>(context =>
                 context.Exception is InvalidOperationException)));
         }
 
@@ -167,11 +187,11 @@ namespace Hangfire.Core.Tests.Server
 #endif
 
         [Fact]
-        public void Run_EatsException_WhenItWasHandlerByFilter()
+        public Task Run_EatsException_WhenItWasHandlerByFilter()
         {
             // Arrange
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<InvalidOperationException>();
 
             var filter = CreateFilter<IServerExceptionFilter>();
@@ -181,7 +201,7 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act & Assert does not throw
-            performer.Perform(_context.Object);
+            return performer.PerformAsync(_context.Object);
         }
 
 #if NETFULL
@@ -231,7 +251,7 @@ namespace Hangfire.Core.Tests.Server
 #endif
 
         [Fact]
-        public void Run_DoesNotCallBoth_Perform_And_OnPerforming_WhenFilterCancelsThis()
+        public async Task Run_DoesNotCallBoth_Perform_And_OnPerforming_WhenFilterCancelsThis()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -242,16 +262,16 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            performer.Perform(_context.Object);
+            await performer.PerformAsync(_context.Object);
 
             // Assert
-            _innerPerformer.Verify(x => x.Perform(_context.Object), Times.Never);
+            _innerPerformer.Verify(x => x.PerformAsync(_context.Object), Times.Never);
 
             filter.Verify(x => x.OnPerformed(It.IsAny<PerformedContext>()), Times.Never);
         }
 
         [Fact]
-        public void Run_TellsOuterFilter_AboutTheCancellationOfCreation()
+        public async Task Run_TellsOuterFilter_AboutTheCancellationOfCreation()
         {
             // Arrange
             var outerFilter = CreateFilter<IServerFilter>();
@@ -263,14 +283,14 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            performer.Perform(_context.Object);
+            await performer.PerformAsync(_context.Object);
 
             // Assert
             outerFilter.Verify(x => x.OnPerformed(It.Is<PerformedContext>(context => context.Canceled)));
         }
 
         [Fact]
-        public void Run_DoesNotCall_Perform_And_OnPerformed_WhenExceptionOccured_DuringPerformingPhase()
+        public async Task Run_DoesNotCall_Perform_And_OnPerformed_WhenExceptionOccured_DuringPerformingPhase()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -281,32 +301,32 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            var exception = Assert.Throws<JobPerformanceException>(
-                () => performer.Perform(_context.Object));
+            var exception = await Assert.ThrowsAsync<JobPerformanceException>(
+                () => performer.PerformAsync(_context.Object));
 
             // Assert
             Assert.IsType<InvalidOperationException>(exception.InnerException);
 
-            _innerPerformer.Verify(x => x.Perform(It.IsAny<PerformContext>()), Times.Never);
+            _innerPerformer.Verify(x => x.PerformAsync(It.IsAny<PerformContext>()), Times.Never);
 
             filter.Verify(x => x.OnPerformed(It.IsAny<PerformedContext>()), Times.Never);
         }
 
         [Fact]
-        public void Run_TellsFiltersAboutException_WhenItIsOccured_DuringThePerformanceOfAJob()
+        public async Task Run_TellsFiltersAboutException_WhenItIsOccured_DuringThePerformanceOfAJob()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
 
             var exception = new InvalidOperationException();
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws(exception);
 
             var performer = CreatePerformer();
 
             // Act
-            Assert.Throws<InvalidOperationException>(() => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => performer.PerformAsync(_context.Object));
 
             // Assert
             filter.Verify(x => x.OnPerformed(It.Is<PerformedContext>(
@@ -314,7 +334,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_TellsOuterFilters_AboutAllExceptions()
+        public async Task Run_TellsOuterFilters_AboutAllExceptions()
         {
             // Arrange
             var outerFilter = CreateFilter<IServerFilter>();
@@ -323,26 +343,26 @@ namespace Hangfire.Core.Tests.Server
 
             var exception = new InvalidOperationException();
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws(exception);
 
             var performer = CreatePerformer();
 
             // Act
-            Assert.Throws<InvalidOperationException>(() => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => performer.PerformAsync(_context.Object));
 
             outerFilter.Verify(x => x.OnPerformed(It.Is<PerformedContext>(context => context.Exception == exception)));
         }
 
         [Fact]
-        public void Run_DoesNotThrow_HandledExceptions()
+        public Task<object> Run_DoesNotThrow_HandledExceptions()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
 
             var exception = new InvalidOperationException();
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws(exception);
 
             filter.Setup(x => x.OnPerformed(It.Is<PerformedContext>(context => context.Exception == exception)))
@@ -351,18 +371,18 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act & Assert does not throw
-            performer.Perform(_context.Object);
+            return performer.PerformAsync(_context.Object);
         }
 
         [Fact]
-        public void Run_TellsOuterFilter_EvenAboutHandledException()
+        public async Task Run_TellsOuterFilter_EvenAboutHandledException()
         {
             // Arrange
             var outerFilter = CreateFilter<IServerFilter>();
             var innerFilter = CreateFilter<IServerFilter>();
 
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<InvalidOperationException>();
 
             innerFilter.Setup(x => x.OnPerformed(It.IsAny<PerformedContext>()))
@@ -371,14 +391,14 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            performer.Perform(_context.Object);
+            await performer.PerformAsync(_context.Object);
 
             // Assert
             outerFilter.Verify(x => x.OnPerformed(It.Is<PerformedContext>(context => context.Exception != null)));
         }
 
         [Fact]
-        public void Run_WrapsOnPerformedException_IntoJobPerformanceException()
+        public async Task Run_WrapsOnPerformedException_IntoJobPerformanceException()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -388,14 +408,14 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act & Assert
-            var exception = Assert.Throws<JobPerformanceException>(() => 
-                performer.Perform(_context.Object));
+            var exception = await Assert.ThrowsAsync<JobPerformanceException>(() => 
+                performer.PerformAsync(_context.Object));
 
             Assert.IsType<InvalidOperationException>(exception.InnerException);
         }
 
         [Fact]
-        public void Run_WrapsOnPerformedException_OccuredAfterAnotherException_IntoJobPerformanceException()
+        public async Task Run_WrapsOnPerformedException_OccuredAfterAnotherException_IntoJobPerformanceException()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -403,31 +423,31 @@ namespace Hangfire.Core.Tests.Server
                 .Throws<InvalidOperationException>();
 
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<ArgumentNullException>();
 
             var performer = CreatePerformer();
 
             // Act & Assert
-            var exception = Assert.Throws<JobPerformanceException>(() =>
-                performer.Perform(_context.Object));
+            var exception = await Assert.ThrowsAsync<JobPerformanceException>(() =>
+                performer.PerformAsync(_context.Object));
 
             Assert.IsType<InvalidOperationException>(exception.InnerException);
         }
 
         [Fact]
-        public void Run_ExceptionFiltersAreNOTInvoked_OnJobAbortedException()
+        public async Task Run_ExceptionFiltersAreNOTInvoked_OnJobAbortedException()
         {
             // Arrange
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<JobAbortedException>();
 
             var filter = CreateFilter<IServerExceptionFilter>();
             var performer = CreatePerformer();
 
             // Act
-            Assert.Throws<JobAbortedException>(() => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<JobAbortedException>(() => performer.PerformAsync(_context.Object));
 
             // Assert
             filter.Verify(
@@ -436,7 +456,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_ExceptionFiltersAreNOTInvoked_OnOperationCanceledException_WhenShutdownTokenIsCanceled()
+        public async Task Run_ExceptionFiltersAreNOTInvoked_OnOperationCanceledException_WhenShutdownTokenIsCanceled()
         {
             // Arrange
             var cts = new CancellationTokenSource();
@@ -444,15 +464,15 @@ namespace Hangfire.Core.Tests.Server
 
             _context.CancellationToken.Setup(x => x.ShutdownToken).Returns(cts.Token);
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<OperationCanceledException>();
 
             var filter = CreateFilter<IServerExceptionFilter>();
             var performer = CreatePerformer();
 
             // Act
-            Assert.Throws<OperationCanceledException>(
-                () => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => performer.PerformAsync(_context.Object));
 
             // Assert
             filter.Verify(
@@ -461,19 +481,19 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_ExceptionFiltersAreInvoked_OnOperationCanceledException_WhenShutdownTokenIsNOTCanceled()
+        public async Task Run_ExceptionFiltersAreInvoked_OnOperationCanceledException_WhenShutdownTokenIsNOTCanceled()
         {
             // Arrange
             _innerPerformer
-                .Setup(x => x.Perform(_context.Object))
+                .Setup(x => x.PerformAsync(_context.Object))
                 .Throws<OperationCanceledException>();
 
             var filter = CreateFilter<IServerExceptionFilter>();
             var performer = CreatePerformer();
 
             // Act
-            Assert.Throws<OperationCanceledException>(
-                () => performer.Perform(_context.Object));
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                () => performer.PerformAsync(_context.Object));
 
             // Assert
             filter.Verify(
@@ -482,7 +502,7 @@ namespace Hangfire.Core.Tests.Server
         }
 
         [Fact]
-        public void Run_ThrowsOperationCanceledException_OccurredInPreFilterMethods_WhenShutdownTokenIsCanceled()
+        public Task Run_ThrowsOperationCanceledException_OccurredInPreFilterMethods_WhenShutdownTokenIsCanceled()
         {
             // Arrange
             var cts = new CancellationTokenSource();
@@ -496,12 +516,12 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act & Assert
-            Assert.Throws<OperationCanceledException>(
-                () => performer.Perform(_context.Object));
+            return Assert.ThrowsAsync<OperationCanceledException>(
+                () => performer.PerformAsync(_context.Object));
         }
 
         [Fact]
-        public void Run_ThrowsJobPerformanceException_InsteadOfOperationCanceled_OccurredInPreFilterMethods_WhenShutdownTokenIsNotCanceled()
+        public async Task Run_ThrowsJobPerformanceException_InsteadOfOperationCanceled_OccurredInPreFilterMethods_WhenShutdownTokenIsNotCanceled()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -511,15 +531,15 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            var exception = Assert.Throws<JobPerformanceException>(
-                () => performer.Perform(_context.Object));
+            var exception = await Assert.ThrowsAsync<JobPerformanceException>(
+                () => performer.PerformAsync(_context.Object));
 
             // Assert
             Assert.IsType<OperationCanceledException>(exception.InnerException);
         }
 
         [Fact]
-        public void Run_ThrowsOperationCanceledException_OccurredInPostFilterMethods_WhenShutdownTokenIsCanceled()
+        public Task Run_ThrowsOperationCanceledException_OccurredInPostFilterMethods_WhenShutdownTokenIsCanceled()
         {
             // Arrange
             var cts = new CancellationTokenSource();
@@ -533,11 +553,11 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act & Assert
-            Assert.Throws<OperationCanceledException>(() => performer.Perform(_context.Object));
+            return Assert.ThrowsAsync<OperationCanceledException>(() => performer.PerformAsync(_context.Object));
         }
 
         [Fact]
-        public void Run_ThrowsJobPerformanceException_InsteadOfOperationCanceled_OccurredInPostFilterMethods_WhenShutdownTokenIsNOTCanceled()
+        public async Task Run_ThrowsJobPerformanceException_InsteadOfOperationCanceled_OccurredInPostFilterMethods_WhenShutdownTokenIsNOTCanceled()
         {
             // Arrange
             var filter = CreateFilter<IServerFilter>();
@@ -547,8 +567,8 @@ namespace Hangfire.Core.Tests.Server
             var performer = CreatePerformer();
 
             // Act
-            var exception = Assert.Throws<JobPerformanceException>(
-                () => performer.Perform(_context.Object));
+            var exception = await Assert.ThrowsAsync<JobPerformanceException>(
+                () => performer.PerformAsync(_context.Object));
 
             // Assert
             Assert.IsType<OperationCanceledException>(exception.InnerException);

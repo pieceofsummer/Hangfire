@@ -14,25 +14,10 @@
 // You should have received a copy of the GNU Lesser General Public 
 // License along with Hangfire. If not, see <http://www.gnu.org/licenses/>.
 
-using Hangfire.Filters;
-
 namespace Hangfire.Server
 {
-    /// <summary>
-    /// Provides the context for the <see cref="IServerFilter.OnPerforming"/> and 
-    /// <see cref="IAsyncServerFilter.OnPerformingAsync"/> methods.
-    /// </summary>
-    public class PerformingContext : PerformContext
+    internal interface IBackgroundTaskWrapper : IBackgroundTask
     {
-        internal PerformingContext(PerformContext context)
-            : base(context)
-        {
-        }
-
-        /// <summary>
-        /// Gets or sets a value that indicates that this <see cref="PerformingContext"/>
-        /// object was canceled.
-        /// </summary>
-        public bool Canceled { get; set; }
+        IBackgroundTask InnerTask { get; }
     }
 }

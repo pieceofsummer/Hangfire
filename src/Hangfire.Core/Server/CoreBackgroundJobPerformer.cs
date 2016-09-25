@@ -21,6 +21,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangfire.Annotations;
+using Hangfire.Common;
 
 namespace Hangfire.Server
 {
@@ -42,7 +43,7 @@ namespace Hangfire.Server
             _activator = activator;
         }
 
-        public object Perform(PerformContext context)
+        public Task<object> PerformAsync(PerformContext context)
         {
             using (var scope = _activator.BeginScope(
                 new JobActivatorContext(context.Connection, context.BackgroundJob, context.CancellationToken)))
@@ -99,32 +100,23 @@ namespace Hangfire.Server
                 exception);
         }
 
-        private static object InvokeMethod(PerformContext context, object instance, object[] arguments)
+        private static Task<object> InvokeMethod(PerformContext context, object instance, object[] arguments)
         {
             try
             {
                 var methodInfo = context.BackgroundJob.Job.Method;
+                var returnType = methodInfo.ReturnType;
+
                 var result = methodInfo.Invoke(instance, arguments);
 
-                var task = result as Task;
-
-                if (task != null)
+                var resultType = returnType.GetTaskResultType();
+                if (resultType != null)
                 {
-                    task.Wait();
-
-                    if (methodInfo.ReturnType.GetTypeInfo().IsGenericType)
-                    {
-                        var resultProperty = methodInfo.ReturnType.GetRuntimeProperty("Result");
-
-                        result = resultProperty.GetValue(task);
-                    }
-                    else
-                    {
-                        result = null;
-                    }
+                    // 'cast' to Task<object> by adding continuation
+                    return ((Task)result).ContinueWithCast(resultType);
                 }
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (ArgumentException ex)
             {

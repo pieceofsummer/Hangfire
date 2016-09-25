@@ -23,6 +23,7 @@ using Hangfire.Annotations;
 using Hangfire.Logging;
 using Hangfire.States;
 using Hangfire.Storage;
+using System.Threading.Tasks;
 
 namespace Hangfire.Server
 {
@@ -38,7 +39,7 @@ namespace Hangfire.Server
     /// <threadsafety static="true" instance="true"/>
     /// 
     /// <seealso cref="EnqueuedState"/>
-    public class Worker : IBackgroundProcess
+    public class Worker : IBackgroundProcess, IBackgroundTask
     {
         private static readonly TimeSpan JobInitializationWaitTimeout = TimeSpan.FromMinutes(1);
         private static readonly ILog Logger = LogProvider.For<Worker>();
@@ -73,8 +74,13 @@ namespace Hangfire.Server
             _workerId = Guid.NewGuid().ToString();
         }
 
+        void IBackgroundProcess.Execute(BackgroundProcessContext context)
+        {
+            throw new InvalidOperationException("Please use IBackgroundTask.ExecuteAsync() instead");
+        }
+
         /// <inheritdoc />
-        public void Execute(BackgroundProcessContext context)
+        public async Task ExecuteAsync(BackgroundProcessContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
@@ -119,7 +125,7 @@ namespace Hangfire.Server
                     // it was performed to guarantee that it was performed AT LEAST once.
                     // It will be re-queued after the JobTimeout was expired.
 
-                    var state = PerformJob(context, connection, fetchedJob.JobId);
+                    var state = await PerformJob(context, connection, fetchedJob.JobId);
 
                     if (state != null)
                     {
@@ -167,7 +173,7 @@ namespace Hangfire.Server
             return $"{GetType().Name} #{_workerId.Substring(0, 8)}";
         }
 
-        private IState PerformJob(BackgroundProcessContext context, IStorageConnection connection, string jobId)
+        private async Task<IState> PerformJob(BackgroundProcessContext context, IStorageConnection connection, string jobId)
         {
             try
             {
@@ -191,7 +197,7 @@ namespace Hangfire.Server
                 var latency = (DateTime.UtcNow - jobData.CreatedAt).TotalMilliseconds;
                 var duration = Stopwatch.StartNew();
 
-                var result = _performer.Perform(performContext);
+                var result = await _performer.PerformAsync(performContext);
                 duration.Stop();
 
                 return new SucceededState(result, (long) latency, duration.ElapsedMilliseconds);
