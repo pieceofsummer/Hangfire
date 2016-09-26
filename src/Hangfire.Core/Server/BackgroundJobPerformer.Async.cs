@@ -116,6 +116,10 @@ namespace Hangfire.Server
         {
             Debug.Assert(next > State.PerformAsyncBegin || _performingContext != null, "performingContext not initialized");
             Debug.Assert(next < State.PerformAsyncEnd   || _performedContext  != null, "performedContext not initialized");
+            
+            JobFilterPair<IServerFilter, IAsyncServerFilter> filter;
+            IServerFilter syncFilter; IAsyncServerFilter asyncFilter;
+            Task task;
 
             switch (next)
             {
@@ -127,7 +131,7 @@ namespace Hangfire.Server
 
                 case State.OnPerformingNext:
                     {
-                        var filter = _filters.GetNextFilter<IServerFilter, IAsyncServerFilter>();
+                        filter = _filters.GetNextFilter<IServerFilter, IAsyncServerFilter>();
                         if (filter.NotFound)
                         {
                             goto case State.PerformAsyncBegin;
@@ -148,10 +152,10 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerformingAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerformingAsync'", asyncFilter.GetType().Name);
 
-                        var task = filter.OnPerformingAsync(_performingContext);
+                        task = asyncFilter.OnPerformingAsync(_performingContext);
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
                             next = State.OnPerformingAsyncEnd;
@@ -165,8 +169,8 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("leave '{0}.OnPerformingAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("leave '{0}.OnPerformingAsync'", asyncFilter.GetType().Name);
                         
                         goto case State.OnPerformingCheckCancel;
                     }
@@ -175,12 +179,12 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerforming'", filter.GetType().Name);
+                        syncFilter = (IServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerforming'", syncFilter.GetType().Name);
 
-                        filter.OnPerforming(_performingContext);
+                        syncFilter.OnPerforming(_performingContext);
 
-                        _log.DebugFormat("leave '{0}.OnPerforming'", filter.GetType().Name);
+                        _log.DebugFormat("leave '{0}.OnPerforming'", syncFilter.GetType().Name);
 
                         goto case State.OnPerformingCheckCancel;
                     }
@@ -198,7 +202,7 @@ namespace Hangfire.Server
 
                 case State.OnCancelPrev:
                     {
-                        var filter = _filters.GetPrevFilter<IServerFilter, IAsyncServerFilter>();
+                        filter = _filters.GetPrevFilter<IServerFilter, IAsyncServerFilter>();
                         if (filter.NotFound)
                         {
                             goto case State.End;
@@ -219,10 +223,10 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerformedAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerformedAsync'", asyncFilter.GetType().Name);
 
-                        var task = filter.OnPerformedAsync(_performedContext);
+                        task = asyncFilter.OnPerformedAsync(_performedContext);
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
                             next = State.OnCancelAsyncEnd;
@@ -236,8 +240,8 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("leave '{0}.OnPerformedAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("leave '{0}.OnPerformedAsync'", asyncFilter.GetType().Name);
 
                         goto case State.OnCancelPrev;
                     }
@@ -246,12 +250,12 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerformed'", filter.GetType().Name);
+                        syncFilter = (IServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerformed'", syncFilter.GetType().Name);
 
-                        filter.OnPerformed(_performedContext);
+                        syncFilter.OnPerformed(_performedContext);
 
-                        _log.DebugFormat("leave '{0}.OnPerformed'", filter.GetType().Name);
+                        _log.DebugFormat("leave '{0}.OnPerformed'", syncFilter.GetType().Name);
 
                         goto case State.OnCancelPrev;
                     }
@@ -260,7 +264,7 @@ namespace Hangfire.Server
                     {
                         _log.DebugFormat("enter '{0}'", _context.BackgroundJob.Job);
 
-                        var task = ExecuteJobMethodAsync();
+                        task = ExecuteJobMethodAsync();
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
                             next = State.PerformAsyncEnd;
@@ -282,7 +286,7 @@ namespace Hangfire.Server
 
                 case State.OnPerformedNext:
                     {
-                        var filter = _filters.GetNextFilter<IServerFilter, IAsyncServerFilter>();
+                        filter = _filters.GetNextFilter<IServerFilter, IAsyncServerFilter>();
                         if (filter.NotFound)
                         {
                             goto case State.End;
@@ -303,10 +307,10 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerformedAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerformedAsync'", asyncFilter.GetType().Name);
 
-                        var task = filter.OnPerformedAsync(_performedContext);
+                        task = asyncFilter.OnPerformedAsync(_performedContext);
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
                             next = State.OnPerformedAsyncEnd;
@@ -320,8 +324,8 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerFilter)state;
-                        _log.DebugFormat("leave '{0}.OnPerformedAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerFilter)state;
+                        _log.DebugFormat("leave '{0}.OnPerformedAsync'", asyncFilter.GetType().Name);
 
                         goto case State.OnPerformedNext;
                     }
@@ -330,12 +334,12 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IServerFilter)state;
-                        _log.DebugFormat("enter '{0}.OnPerformed'", filter.GetType().Name);
+                        syncFilter = (IServerFilter)state;
+                        _log.DebugFormat("enter '{0}.OnPerformed'", syncFilter.GetType().Name);
 
-                        filter.OnPerformed(_performedContext);
+                        syncFilter.OnPerformed(_performedContext);
 
-                        _log.DebugFormat("leave '{0}.OnPerformed'", filter.GetType().Name);
+                        _log.DebugFormat("leave '{0}.OnPerformed'", syncFilter.GetType().Name);
 
                         goto case State.OnPerformedNext;
                     }
@@ -355,6 +359,10 @@ namespace Hangfire.Server
         {
             Debug.Assert(_exceptionContext != null, "exceptionContext not initialized");
             
+            JobFilterPair<IServerExceptionFilter, IAsyncServerExceptionFilter> filter;
+            IServerExceptionFilter syncFilter; IAsyncServerExceptionFilter asyncFilter;
+            Task task;
+
             switch (next)
             {
                 case EFState.Begin:
@@ -365,7 +373,7 @@ namespace Hangfire.Server
 
                 case EFState.ErrorHandlerNext:
                     {
-                        var filter = _filters.GetNextFilter<IServerExceptionFilter, IAsyncServerExceptionFilter>();
+                        filter = _filters.GetNextFilter<IServerExceptionFilter, IAsyncServerExceptionFilter>();
                         if (filter.NotFound)
                         {
                             goto case EFState.End;
@@ -386,10 +394,10 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerExceptionFilter)state;
-                        _log.DebugFormat("enter '{0}.OnServerExceptionAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerExceptionFilter)state;
+                        _log.DebugFormat("enter '{0}.OnServerExceptionAsync'", asyncFilter.GetType().Name);
 
-                        var task = filter.OnServerExceptionAsync(_exceptionContext);
+                        task = asyncFilter.OnServerExceptionAsync(_exceptionContext);
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
                             next = EFState.ErrorHandlerAsyncEnd;
@@ -403,8 +411,8 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IAsyncServerExceptionFilter)state;
-                        _log.DebugFormat("leave '{0}.OnServerExceptionAsync'", filter.GetType().Name);
+                        asyncFilter = (IAsyncServerExceptionFilter)state;
+                        _log.DebugFormat("leave '{0}.OnServerExceptionAsync'", asyncFilter.GetType().Name);
 
                         goto case EFState.ErrorHandlerNext;
                     }
@@ -413,12 +421,12 @@ namespace Hangfire.Server
                     {
                         Debug.Assert(state != null);
 
-                        var filter = (IServerExceptionFilter)state;
-                        _log.DebugFormat("enter '{0}.OnServerException'", filter.GetType().Name);
+                        syncFilter = (IServerExceptionFilter)state;
+                        _log.DebugFormat("enter '{0}.OnServerException'", syncFilter.GetType().Name);
 
-                        filter.OnServerException(_exceptionContext);
+                        syncFilter.OnServerException(_exceptionContext);
 
-                        _log.DebugFormat("leave '{0}.OnServerException'", filter.GetType().Name);
+                        _log.DebugFormat("leave '{0}.OnServerException'", syncFilter.GetType().Name);
 
                         goto case EFState.ErrorHandlerNext;
                     }
