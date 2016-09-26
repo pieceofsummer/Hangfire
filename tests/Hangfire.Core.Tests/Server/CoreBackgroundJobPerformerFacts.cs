@@ -241,7 +241,6 @@ namespace Hangfire.Core.Tests.Server
             Assert.Equal("exception", thrownException.InnerException.Message);
         }
 
-#pragma warning disable 4014
         [Fact]
         public async Task Run_ThrowsPerformanceException_WithUnwrappedInnerException_ForTasks()
         {
@@ -254,7 +253,6 @@ namespace Hangfire.Core.Tests.Server
             Assert.IsType<InvalidOperationException>(thrownException.InnerException);
             Assert.Equal("exception", thrownException.InnerException.Message);
         }
-#pragma warning restore 4014
 
         [Fact]
         public async Task Perform_ThrowsPerformanceException_WhenMethodThrownTaskCanceledException()
