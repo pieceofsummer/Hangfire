@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Hangfire.Server
 {
-    public class BackgroundJobPerformer : IBackgroundJobPerformer
+    public partial class BackgroundJobPerformer : IBackgroundJobPerformer
     {
         private readonly IJobFilterProvider _filterProvider;
         private readonly IBackgroundJobPerformer _innerPerformer;
@@ -58,7 +58,7 @@ namespace Hangfire.Server
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
-            return new BackgroundJobPerformer_Async(_filterProvider, _innerPerformer).InvokeAsync(context);
+            return new AsyncImpl(_filterProvider, _innerPerformer).InvokeAsync(context);
         }
     }
 }
