@@ -45,15 +45,17 @@ namespace Hangfire.Server
 
         public Task<object> PerformAsync(PerformContext context)
         {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+
+            if (context.BackgroundJob.Job == null)
+            {
+                throw new InvalidOperationException("Can't perform a background job with a null job.");
+            }
+
             using (var scope = _activator.BeginScope(
                 new JobActivatorContext(context.Connection, context.BackgroundJob, context.CancellationToken)))
             {
                 object instance = null;
-
-                if (context.BackgroundJob.Job == null)
-                {
-                    throw new InvalidOperationException("Can't perform a background job with a null job.");
-                }
                 
                 if (!context.BackgroundJob.Job.Method.IsStatic)
                 {

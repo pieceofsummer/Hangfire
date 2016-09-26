@@ -58,6 +58,11 @@ namespace Hangfire.Server
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
+            if (context.BackgroundJob.Job == null)
+            {
+                throw new InvalidOperationException("Can't perform a background job with a null job.");
+            }
+
             return new AsyncImpl(_filterProvider, _innerPerformer).InvokeAsync(context);
         }
     }
