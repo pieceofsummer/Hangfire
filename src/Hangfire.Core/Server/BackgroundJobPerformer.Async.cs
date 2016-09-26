@@ -95,7 +95,7 @@ namespace Hangfire.Server
                 // Secondary loop to handle exception filters
                 _exceptionContext = new ServerExceptionContext(_context, ex);
 
-                for (var next = State.Begin; next != State.End; 
+                for (var next = EFState.Begin; next != EFState.End; 
                     _context.CancellationToken.ThrowIfCancellationRequested())
                 {
                     await ExceptionFilters(ref next, ref state);
@@ -351,38 +351,38 @@ namespace Hangfire.Server
             }
         }
 
-        private Task ExceptionFilters(ref State next, ref object state)
+        private Task ExceptionFilters(ref EFState next, ref object state)
         {
             Debug.Assert(_exceptionContext != null, "exceptionContext not initialized");
             
             switch (next)
             {
-                case State.Begin:
+                case EFState.Begin:
                     {
                         _filters.Reset();
-                        goto case State.ErrorHandlerNext;
+                        goto case EFState.ErrorHandlerNext;
                     }
 
-                case State.ErrorHandlerNext:
+                case EFState.ErrorHandlerNext:
                     {
                         var filter = _filters.GetNextFilter<IServerExceptionFilter, IAsyncServerExceptionFilter>();
                         if (filter.NotFound)
                         {
-                            goto case State.End;
+                            goto case EFState.End;
                         }
                         else if (filter.Async != null)
                         {
                             state = filter.Async;
-                            goto case State.ErrorHandlerAsyncBegin;
+                            goto case EFState.ErrorHandlerAsyncBegin;
                         }
                         else
                         {
                             state = filter.Sync;
-                            goto case State.ErrorHandlerSync;
+                            goto case EFState.ErrorHandlerSync;
                         }
                     }
 
-                case State.ErrorHandlerAsyncBegin:
+                case EFState.ErrorHandlerAsyncBegin:
                     {
                         Debug.Assert(state != null);
 
@@ -392,24 +392,24 @@ namespace Hangfire.Server
                         var task = filter.OnServerExceptionAsync(_exceptionContext);
                         if (task.Status != TaskStatus.RanToCompletion)
                         {
-                            next = State.ErrorHandlerAsyncEnd;
+                            next = EFState.ErrorHandlerAsyncEnd;
                             return task;
                         }
 
-                        goto case State.ErrorHandlerAsyncEnd;
+                        goto case EFState.ErrorHandlerAsyncEnd;
                     }
 
-                case State.ErrorHandlerAsyncEnd:
+                case EFState.ErrorHandlerAsyncEnd:
                     {
                         Debug.Assert(state != null);
 
                         var filter = (IAsyncServerExceptionFilter)state;
                         _log.DebugFormat("leave '{0}.OnServerExceptionAsync'", filter.GetType().Name);
 
-                        goto case State.ErrorHandlerNext;
+                        goto case EFState.ErrorHandlerNext;
                     }
 
-                case State.ErrorHandlerSync:
+                case EFState.ErrorHandlerSync:
                     {
                         Debug.Assert(state != null);
 
@@ -420,12 +420,12 @@ namespace Hangfire.Server
 
                         _log.DebugFormat("leave '{0}.OnServerException'", filter.GetType().Name);
 
-                        goto case State.ErrorHandlerNext;
+                        goto case EFState.ErrorHandlerNext;
                     }
 
-                case State.End:
+                case EFState.End:
                     {
-                        next = State.End;
+                        next = EFState.End;
                         return Task.FromResult(0);
                     }
 
@@ -446,17 +446,21 @@ namespace Hangfire.Server
                 _performedContext = new PerformedContext(_context, null, false, ex);
             }
         }
-        
-        private enum State
+
+        private enum EFState
         {
             Begin,
-            
-            // Error handler states:
             ErrorHandlerNext,
             ErrorHandlerAsyncBegin,
             ErrorHandlerAsyncEnd,
             ErrorHandlerSync,
+            End
+        }
 
+        private enum State
+        {
+            Begin,
+            
             // OnPerforming states:
             OnPerformingNext,
             OnPerformingAsyncBegin,
