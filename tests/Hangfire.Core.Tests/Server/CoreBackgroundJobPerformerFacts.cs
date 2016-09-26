@@ -350,7 +350,6 @@ namespace Hangfire.Core.Tests.Server
             Assert.Equal("Return value", result);
         }
 
-#pragma warning disable 4014
         [Fact]
         public async Task Run_DoesNotReturnValue_WhenCallingFunctionReturningPlainTask()
         {
@@ -361,9 +360,7 @@ namespace Hangfire.Core.Tests.Server
 
             Assert.Equal(null, result);
         }
-#pragma warning restore 4014
 
-#pragma warning disable 4014
         [Fact]
         public async Task Run_ReturnsTaskResult_WhenCallingFunctionReturningGenericTask()
         {
@@ -374,9 +371,7 @@ namespace Hangfire.Core.Tests.Server
 
             Assert.Equal("Return value", result);
         }
-#pragma warning restore 4014
 
-#pragma warning disable 4014
         [Fact]
         public void Run_ReturnsTaskResult_InWaitingForActivationState()
         {
@@ -387,7 +382,15 @@ namespace Hangfire.Core.Tests.Server
 
             Assert.Equal(TaskStatus.WaitingForActivation, result.Status);
         }
-#pragma warning restore 4014
+
+        [Fact]
+        public Task Run_DoesNotDisposeScopeBeforeCompletion()
+        {
+            _context.BackgroundJob.Job = Job.FromExpression<AsyncDisposable>(x => x.CheckDisposedAsync());
+            var performer = CreatePerformer();
+            
+            return performer.PerformAsync(_context.Object);
+        }
 
         public void InstanceMethod()
         {
@@ -417,6 +420,24 @@ namespace Hangfire.Core.Tests.Server
             public void Dispose()
             {
                 throw new InvalidOperationException();
+            }
+        }
+
+        private class AsyncDisposable : IDisposable
+        {
+            private bool _disposed = false;
+
+            public void Dispose()
+            {
+                _disposed = true;
+            }
+
+            public async Task CheckDisposedAsync()
+            {
+                await Task.Delay(100);
+                
+                if (_disposed)
+                    throw new ObjectDisposedException("instance");
             }
         }
 

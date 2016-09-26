@@ -43,7 +43,7 @@ namespace Hangfire.Server
             _activator = activator;
         }
 
-        public Task<object> PerformAsync(PerformContext context)
+        public async Task<object> PerformAsync(PerformContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
 
@@ -69,9 +69,15 @@ namespace Hangfire.Server
                 }
 
                 var arguments = SubstituteArguments(context);
-                var result = InvokeMethod(context, instance, arguments);
+                
+                var task = InvokeMethod(context, instance, arguments);
+                if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    return task.Result;
+                }
 
-                return result;
+                // awaiting is mandatory here to not run out of scope!
+                return await task;
             }
         }
 
