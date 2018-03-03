@@ -556,7 +556,11 @@ values (scope_identity(), @queue)";
             {
                 var queue = CreateJobQueue(connection, invisibilityTimeout: null);
 
-                queue.Enqueue(connection, "default", "1");
+                queue.Enqueue(connection, 
+#if !NETFULL
+                    null,
+#endif
+                    "default", "1");
 
                 var record = connection.Query("select * from HangFire.JobQueue").Single();
                 Assert.Equal("1", record.JobId.ToString());
@@ -572,7 +576,11 @@ values (scope_identity(), @queue)";
             {
                 var queue = CreateJobQueue(connection, invisibilityTimeout: null);
                 
-                queue.Enqueue(connection, "default", (int.MaxValue + 1L).ToString());
+                queue.Enqueue(connection,
+#if !NETFULL
+                    null,
+#endif
+                    "default", (int.MaxValue + 1L).ToString());
 
                 var record = connection.Query("select * from HangFire.JobQueue").Single();
                 Assert.Equal((int.MaxValue + 1L).ToString(), record.JobId.ToString());

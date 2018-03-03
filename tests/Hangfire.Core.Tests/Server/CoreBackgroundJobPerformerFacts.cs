@@ -468,7 +468,7 @@ namespace Hangfire.Core.Tests.Server
 
         public static async Task TaskExceptionMethod()
         {
-            await Task.Yield();
+            await Task.Delay(10).ConfigureAwait(false);
 
             throw new InvalidOperationException("exception");
         }

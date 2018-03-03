@@ -701,7 +701,7 @@ namespace Hangfire.Core.Tests.Common
 
         public async void AsyncVoidMethod()
         {
-            await Task.Yield();
+            await Task.Delay(10).ConfigureAwait(false);
         }
 
         public void DelegateMethod(Action action)
@@ -745,12 +745,12 @@ namespace Hangfire.Core.Tests.Common
 
             public async Task FunctionReturningTask()
             {
-                await Task.Yield();
+                await Task.Delay(10).ConfigureAwait(false);
             }
 
             public async Task<string> FunctionReturningTaskResultingInString()
             {
-                await Task.Yield();
+                await Task.Delay(10).ConfigureAwait(false);
 
                 return FunctionReturningValue();
             }

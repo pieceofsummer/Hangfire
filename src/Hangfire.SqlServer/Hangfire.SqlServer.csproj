@@ -1,126 +1,68 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A523C0E3-097D-4869-977F-15A717EA3E83}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFrameworks>net45;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <AssemblyVersion>1.7.0.0</AssemblyVersion>
+    <FileVersion>1.7.0</FileVersion>
+    <VersionPrefix>1.7.0</VersionPrefix>
+    <VersionSuffix>beta2</VersionSuffix>
+    <Authors>Sergey Odinokov</Authors>
+    <Company>Sergey Odinokov</Company>
+    <Product>Hangfire</Product>
+    <Description>SQL Server job storage for Hangfire</Description>
+    <Copyright>Copyright © 2013-2018 Sergey Odinokov</Copyright>
+    <Summary>An easy way to perform background job processing in your .NET and .NET Core applications. No Windows Service or separate process required.</Summary>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Title>Hangfire.SqlServer</Title>
+    <PackageId>Hangfire.SqlServer</PackageId>
+    <PackageTags>Hangfire OWIN Long-Running Background Fire-And-Forget Delayed Recurring Tasks Jobs Scheduler Threading Queues</PackageTags>
+    <PackageProjectUrl>https://www.hangfire.io/</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.github.com/HangfireIO/Hangfire/master/LICENSE.md</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/HangfireIO/Hangfire</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <RootNamespace>Hangfire.SqlServer</RootNamespace>
     <AssemblyName>Hangfire.SqlServer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>5f064ca7</NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NETFULL</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Hangfire.SqlServer.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-    <NoWarn>1591</NoWarn>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;NETFULL</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Hangfire.SqlServer.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-    <NoWarn>1591</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <MinClientVersion>3.5</MinClientVersion>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Dapper, Version=1.50.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Dapper.1.50.1\lib\net45\Dapper.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="Constants.cs" />
-    <Compile Include="CountersAggregator.cs" />
-    <Compile Include="EnqueuedAndFetchedCountDto.cs" />
-    <Compile Include="Entities\SqlHash.cs" />
-    <Compile Include="ExpirationManager.cs" />
-    <Compile Include="Entities\JobParameter.cs" />
-    <Compile Include="Entities\SqlJob.cs" />
-    <Compile Include="Entities\SqlState.cs" />
-    <Compile Include="Entities\Server.cs" />
-    <Compile Include="Entities\ServerData.cs" />
-    <Compile Include="IPersistentJobQueue.cs" />
-    <Compile Include="IPersistentJobQueueMonitoringApi.cs" />
-    <Compile Include="IPersistentJobQueueProvider.cs" />
-    <Compile Include="PersistentJobQueueProviderCollection.cs" />
-    <Compile Include="SqlCommandBatch.cs" />
-    <Compile Include="SqlCommandSet.cs" />
-    <Compile Include="SqlServerTimeoutJob.cs" />
-    <Compile Include="SqlServerJobQueue.cs" />
-    <Compile Include="SqlServerTransactionJob.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SqlServerDistributedLock.cs" />
-    <Compile Include="SqlServerDistributedLockException.cs" />
-    <Compile Include="SqlServerJobQueueProvider.cs" />
-    <Compile Include="SqlServerMonitoringApi.cs" />
-    <Compile Include="SqlServerObjectsInstaller.cs" />
-    <Compile Include="SqlServerJobQueueMonitoringApi.cs" />
-    <Compile Include="SqlServerStorage.cs" />
-    <Compile Include="SqlServerStorageExtensions.cs" />
-    <Compile Include="SqlServerStorageOptions.cs" />
-    <Compile Include="SqlServerConnection.cs" />
-    <Compile Include="SqlServerWriteOnlyTransaction.cs" />
-    <Compile Include="SqlServerBootstrapperConfigurationExtensions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Hangfire.Core\Hangfire.Core.csproj">
-      <Project>{C995EA9E-56EE-4951-8260-D94260A7F4C2}</Project>
-      <Name>Hangfire.Core</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\Hangfire.Core\Hangfire.Core.csproj" />
+    <PackageReference Include="Dapper" Version="1.50.2" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Install.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Hangfire.SqlServer.project.json" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="DefaultInstall.sql">
-      <AutoGen>True</AutoGen>
+    <EmbeddedResource Update="DefaultInstall.sql">
       <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
       <DependentUpon>DefaultInstall.tt</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="DefaultInstall.tt">
+    <None Update="DefaultInstall.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>DefaultInstall.sql</LastGenOutput>
-    </EmbeddedResource>
+    </None>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
+    <DefineConstants>NETFULL;$(AdditionalConstants)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Transactions" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'net45'">
+    <Compile Remove="SqlServerBootstrapperConfigurationExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+    <PackageReference Include="Microsoft.CSharp" Version="4.0.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.1.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.CSharp" Version="4.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

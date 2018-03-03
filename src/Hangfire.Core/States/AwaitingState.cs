@@ -208,7 +208,11 @@ namespace Hangfire.States
                     "NextState", JsonConvert.SerializeObject(NextState, new JsonSerializerSettings
                     {
                         TypeNameHandling = TypeNameHandling.Objects,
+#if NETSTANDARD2_0
+                        TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+#else
                         TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple,
+#endif
                         DefaultValueHandling = DefaultValueHandling.Ignore
                     })
                 },

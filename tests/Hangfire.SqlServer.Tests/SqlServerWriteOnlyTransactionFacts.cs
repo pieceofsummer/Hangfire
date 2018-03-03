@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+#if !NETFULL
+using System.Data.Common;
+#endif
 using System.Data.SqlClient;
 using System.Linq;
 using Dapper;
@@ -241,7 +244,13 @@ select scope_identity() as Id";
             {
                 Commit(sql, x => x.AddToQueue("default", "1"), useBatching);
 
-                correctJobQueue.Verify(x => x.Enqueue(It.IsNotNull<IDbConnection>(), "default", "1"));
+                correctJobQueue.Verify(x => x.Enqueue(
+#if NETFULL
+                    It.IsNotNull<IDbConnection>(),
+#else
+                    It.IsNotNull<DbConnection>(), It.IsAny<DbTransaction>(),
+#endif
+                    "default", "1"));
             });
         }
 
