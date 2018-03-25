@@ -250,7 +250,6 @@ namespace Hangfire
             return $"0 0 1 */{interval} *";
         }
 
-#if NETFULL
         /// <summary>
         /// Converts a Cron expression string into a description.
         /// </summary>
@@ -277,6 +276,5 @@ namespace Hangfire
 
             return CronExpressionDescriptor.ExpressionDescriptor.GetDescription(cronExpression);
         }
-#endif
     }
 }

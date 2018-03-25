@@ -108,7 +108,6 @@
                                         @* ReSharper disable once EmptyGeneralCatchClause *@
                                         @{
                                             string cronDescription = null;
-#if NETFULL
                                             try
                                             {
                                                 cronDescription = string.IsNullOrEmpty(job.Cron) ? null : CronExpressionDescriptor.ExpressionDescriptor.GetDescription(job.Cron);
@@ -116,7 +115,6 @@
                                             catch (FormatException)
                                             {
                                             }
-#endif
                                         }
 
                                         @if (cronDescription != null)
