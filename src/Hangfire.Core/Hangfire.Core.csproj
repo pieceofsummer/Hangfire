@@ -25,14 +25,23 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <MinClientVersion>3.5</MinClientVersion>
     <NoWarn>1701;1702;1705;1591</NoWarn>
+    <ILRepackTargetsFile>..\..\ILRepack.targets</ILRepackTargetsFile>
   </PropertyGroup>
+  <Import Project="$(ILRepackTargetsFile)" Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
     <EmbeddedResource Include="Dashboard\Content\css\**" />
     <EmbeddedResource Include="Dashboard\Content\js\**" />
     <EmbeddedResource Include="Dashboard\Content\fonts\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Cronos" Version="0.6.3" />
+    <None Update="Dashboard\Pages\**\*.cshtml">
+      <AutoGen>True</AutoGen>
+      <Generator>RazorGenerator</Generator>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.6.3" ILMerge="true" />
+    <PackageReference Include="RazorGenerator.MSBuild" Version="2.5.0" PrivateAssets="All" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
     <DefineConstants>NETFULL;$(AdditionalConstants)</DefineConstants>
@@ -40,9 +49,9 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="Microsoft.CSharp" />
     <PackageReference Include="Newtonsoft.Json" Version="5.0.1" />
-    <PackageReference Include="Microsoft.Owin" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Owin" Version="3.0.1" ILMerge="true" />
     <PackageReference Include="Owin" Version="1.0.0" />
-    <PackageReference Include="CronExpressionDescriptor" Version="1.21.2" />
+    <PackageReference Include="CronExpressionDescriptor" Version="1.21.2" ILMerge="true" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'net45'">
     <Compile Remove="AppBuilderExtensions.cs" />
@@ -65,14 +74,14 @@
     <PackageReference Include="System.Threading.Thread" Version="4.0.0" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
-    <PackageReference Include="CronExpressionDescriptor" Version="2.2.0" />
+    <PackageReference Include="CronExpressionDescriptor" Version="2.2.0" ILMerge="true" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.CSharp" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
-    <PackageReference Include="CronExpressionDescriptor" Version="2.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="CronExpressionDescriptor" Version="2.2.0" ILMerge="true" />
   </ItemGroup>
 </Project>

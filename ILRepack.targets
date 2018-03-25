@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.15.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <Target Name="ILCollectAssemblies" AfterTargets="Build">
+    <PropertyGroup>
+      <RepackDebug Condition="'$(Configuration)' == 'Debug'">true</RepackDebug>
+      <RepackDebug Condition="'$(Configuration)' == 'Release'">false</RepackDebug>
+    </PropertyGroup>
+    
+    <CreateItem Include="@(PackageReference->'%(Identity).dll')" Condition="'%(PackageReference.ILMerge)' == 'true'">
+      <Output TaskParameter="Include" ItemName="MergePackages" />
+    </CreateItem>
+    
+    <FindInList List="@(ReferencePath)" ItemSpecToFind="%(MergePackages.Identity)" MatchFileNameOnly="true" CaseSensitive="false" Condition="'@(MergePackages)' != ''">
+      <Output TaskParameter="ItemFound" ItemName="MergeAssemblies" />
+    </FindInList>
+    
+    <Message Text="Merging $(TargetName) with @(MergeAssemblies, ', ')" Importance="High" Condition="'@(MergeAssemblies)' != ''" />
+
+    <ILRepack Condition="'@(MergeAssemblies)' != ''"
+              Parallel="true" Internalize="true" DebugInfo="$(RepackDebug)"
+              InputAssemblies="$(OutputPath)$(TargetName)$(TargetExt);@(MergeAssemblies)"
+              LibraryPath="@(ReferencePath->'%(RootDir)%(Directory)')"
+              KeyFile="$(KeyFile)" TargetKind="SameAsPrimaryAssembly"
+              OutputFile="$(OutputPath)$(TargetName)$(TargetExt)" />
+  </Target>
+</Project>

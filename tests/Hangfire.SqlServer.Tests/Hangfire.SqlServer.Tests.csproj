@@ -6,6 +6,7 @@
     <AssemblyName>Hangfire.SqlServer.Tests</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <NoWarn>1701;1702;1705;CS0618;xUnit2000;xUnit2003;xUnit2004;xUnit1013;xUnit2013</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net452'">
     <DefineConstants>NETFULL;$(AdditionalConstants)</DefineConstants>
@@ -13,6 +14,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hangfire.Core\Hangfire.Core.csproj" />
     <ProjectReference Include="..\..\src\Hangfire.SqlServer\Hangfire.SqlServer.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Exclude ilmerged packages for release configuration -->
+    <PackageReference Include="Dapper" Version="1.50.2" ExcludeAssets="Compile" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net452'">
     <Reference Include="Microsoft.CSharp" />

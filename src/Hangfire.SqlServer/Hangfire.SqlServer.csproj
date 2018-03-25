@@ -25,10 +25,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <MinClientVersion>3.5</MinClientVersion>
     <NoWarn>1701;1702;1705;1591</NoWarn>
+    <ILRepackTargetsFile>..\..\ILRepack.targets</ILRepackTargetsFile>
   </PropertyGroup>
+  <Import Project="$(ILRepackTargetsFile)" Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
     <ProjectReference Include="..\Hangfire.Core\Hangfire.Core.csproj" />
-    <PackageReference Include="Dapper" Version="1.50.2" />
+    <PackageReference Include="Dapper" Version="1.50.2" ILMerge="true" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Install.sql" />
