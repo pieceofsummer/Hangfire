@@ -25,6 +25,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <MinClientVersion>3.5</MinClientVersion>
     <NoWarn>1701;1702;1705;1591</NoWarn>
+    <RazorViewsCodeGenDirectory>obj\$(Configuration)\CodeGen\</RazorViewsCodeGenDirectory>
     <ILRepackTargetsFile>..\..\ILRepack.targets</ILRepackTargetsFile>
   </PropertyGroup>
   <Import Project="$(ILRepackTargetsFile)" Condition="'$(Configuration)' == 'Release'" />
@@ -41,7 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.6.3" ILMerge="true" />
-    <PackageReference Include="RazorGenerator.MSBuild" Version="2.5.0" PrivateAssets="All" />
+    <PackageReference Include="RazorGenerator.MSBuild.DotNet" Version="2.5.0" PrivateAssets="All" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
     <DefineConstants>NETFULL;$(AdditionalConstants)</DefineConstants>

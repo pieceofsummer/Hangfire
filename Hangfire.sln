@@ -29,6 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{850F1324
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
 		ILRepack.targets = ILRepack.targets
+		NuGet.config = NuGet.config
 	EndProjectSection
 EndProject
 Global
